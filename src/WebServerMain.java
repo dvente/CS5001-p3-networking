@@ -5,13 +5,10 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.file.FileSystem;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
-
-import com.sun.xml.internal.ws.util.StringUtils;
 
 public class WebServerMain {
 	//next line taken from https://stackoverflow.com/questions/2041778/how-to-initialize-hashset-values-by-construction
