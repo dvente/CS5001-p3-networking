@@ -6,9 +6,9 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class WebServermain {
+public class WebServerMain {
 
-	public WebServermain(int port, File root) throws IOException {
+	public WebServerMain(int port, File root) throws IOException {
 		super();
 		this.port = port;
 		this.root = root;
@@ -53,7 +53,7 @@ public class WebServermain {
 			assert inRoot.exists() && inRoot.isDirectory() && inRoot.canWrite() && inRoot.canRead();
 			assert inPort > 0;
 
-			new WebServermain(inPort, inRoot);
+			new WebServerMain(inPort, inRoot);
 
 		} catch (Exception e) {
 			e.printStackTrace();
