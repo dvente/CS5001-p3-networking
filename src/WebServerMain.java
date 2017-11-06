@@ -62,10 +62,10 @@ public class WebServerMain {
 	
 	private String readFile(File file) {
 		String contents = "";
-
+		
 		try (Scanner s = new Scanner(file);){
 			while(s.hasNextLine()) {
-				contents += s.nextLine() + "\n";
+				contents += s.nextLine() + crlf;
 			}
 		} catch (Exception e) {
 			//we checked the file existed so this should never happen
@@ -115,8 +115,7 @@ public class WebServerMain {
 		String header = protocol + " " + Integer.toString(responsCode) + " " + responseMessage.get(responsCode) + crlf;
 		header += "Server: Simple Java Http Server" + crlf;
 		header += "Content-Type: " + mimeType + crlf;
-		header += "Content-Length: ";
-		header += (responseBody.length() + header.length());
+		header += "Content-Length: " + responseBody.length();
 		return header;
 		
 	}
