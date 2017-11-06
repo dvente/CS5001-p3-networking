@@ -65,7 +65,7 @@ public class WebServerMain {
 
 		try (Scanner s = new Scanner(file);){
 			while(s.hasNextLine()) {
-				contents += s.nextLine();
+				contents += s.nextLine() + "\n";
 			}
 		} catch (Exception e) {
 			//we checked the file existed so this should never happen
@@ -83,18 +83,28 @@ public class WebServerMain {
 		File requestedFile = new File(path);
 		if(!requestedFile.exists()) {
 			out.println( getResponseHeader(404, ""));
+			System.out.println( getResponseHeader(404, ""));
+			return;
 		}
 		if(!requestedFile.canRead()) {
 			out.println(getResponseHeader(403, ""));
+			System.out.println(getResponseHeader(403, ""));
+			return;
 		}
 		
 		if(method.equals("GET")) {
 			String fileContents =  readFile(requestedFile);
+			System.out.println(getResponseHeader(200,fileContents)); 
+			System.out.println(fileContents);
 			out.println(getResponseHeader(200,fileContents)); 
 			out.println(fileContents);
+			return;
 		} else if(method.equals("HEAD")) {
 			String fileContents =  readFile(requestedFile);
+			System.out.println(getResponseHeader(200,fileContents)); 
+			System.out.println(fileContents);
 			out.println(getResponseHeader(200,fileContents));
+			return;
 		}
 		
 	}
@@ -105,7 +115,8 @@ public class WebServerMain {
 		String header = protocol + " " + Integer.toString(responsCode) + " " + responseMessage.get(responsCode) + crlf;
 		header += "Server: Simple Java Http Server" + crlf;
 		header += "Content-Type: " + mimeType + crlf;
-		header += "Content-Length: " + responseBody.length();
+		header += "Content-Length: ";
+		header += (responseBody.length() + header.length());
 		return header;
 		
 	}
@@ -158,7 +169,7 @@ public class WebServerMain {
 			new WebServerMain(inPort, args[0]);
 
 		} catch (Exception e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 			System.out.println("Usage: java WebServerMain <document_root> <port>");
 		}
 
