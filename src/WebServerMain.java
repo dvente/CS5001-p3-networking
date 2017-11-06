@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import sun.net.www.content.text.plain;
@@ -21,8 +22,6 @@ public class WebServerMain {
 	private Set<String> implementedRequests = new HashSet<String>(Arrays.asList("GET","HEAD"));
 	private Map<Integer,String> responseMessage;
 	
-	
-	private int port = -1;
 	private String root = null;
 	private ServerSocket ss = null;
 	private Socket conn = null;
@@ -33,7 +32,6 @@ public class WebServerMain {
 	
 	public WebServerMain(int port, String root) throws IOException {
 		super();
-		this.port = port;
 		this.root = root;
 
 		responseMessage = new HashMap<Integer,String>();
@@ -72,6 +70,7 @@ public class WebServerMain {
 			e.printStackTrace();
 			System.exit(1);
 		}
+
 		return contents;
 	}
 	
@@ -94,15 +93,11 @@ public class WebServerMain {
 		
 		if(method.equals("GET")) {
 			String fileContents =  readFile(requestedFile);
-			System.out.println(getResponseHeader(200,fileContents)); 
-			System.out.println(fileContents);
 			out.println(getResponseHeader(200,fileContents)); 
 			out.println(fileContents);
 			return;
 		} else if(method.equals("HEAD")) {
 			String fileContents =  readFile(requestedFile);
-			System.out.println(getResponseHeader(200,fileContents)); 
-			System.out.println(fileContents);
 			out.println(getResponseHeader(200,fileContents));
 			return;
 		}
@@ -115,7 +110,7 @@ public class WebServerMain {
 		String header = protocol + " " + Integer.toString(responsCode) + " " + responseMessage.get(responsCode) + crlf;
 		header += "Server: Simple Java Http Server" + crlf;
 		header += "Content-Type: " + mimeType + crlf;
-		header += "Content-Length: " + responseBody.length();
+		header += "Content-Length: " + responseBody.length() + crlf;
 		return header;
 		
 	}
