@@ -1,22 +1,25 @@
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-import sun.net.www.content.text.plain;
-
+/**
+ * @author 170008773
+ *
+ */
 public class WebServerMain {
 	// next line taken from
 	// https://stackoverflow.com/questions/2041778/how-to-initialize-hashset-values-by-construction
@@ -26,11 +29,18 @@ public class WebServerMain {
 	private String root = null;
 	private ServerSocket ss = null;
 	private Socket conn = null;
+	private final String logPath = "logs";
 	private final String protocol = "HTTP/1.1";
 	private final String crlf = "\r\n";
 	private PrintWriter out = null;
 	private BufferedReader in = null;
+	private final boolean verbose = true;
 
+	/**
+	 * @param port
+	 * @param root
+	 * @throws IOException
+	 */
 	public WebServerMain(int port, String root) throws IOException {
 		super();
 		this.root = root;
@@ -58,6 +68,50 @@ public class WebServerMain {
 
 	}
 
+	private void respond(String requestLine, int responseCode, String messageBody, boolean serveBody, boolean verbose) {
+		logRequest(requestLine, responseCode, messageBody.length());
+		if (verbose) {
+			System.out.println(getResponseHeader(responseCode, messageBody));
+		}
+
+		out.println(getResponseHeader(responseCode, messageBody));
+		if (serveBody) {
+			out.println(messageBody);
+			if (verbose) {
+				System.out.println(messageBody);
+			}
+		}
+		out.flush();
+	}
+
+	private void logRequest(String requestLine, int responseCode, int sizeOfFileReturned) {
+		// next line was taken from
+		// https://stackoverflow.com/questions/23068676/how-to-get-current-timestamp-in-string-format-in-java-yyyy-mm-dd-hh-mm-ss
+		String today = new SimpleDateFormat("YYYYMMdd").format(new Date());
+		File currentLog = new File(logPath + File.separator + today + ".log");
+		File logDir = new File(logPath);
+		if(!logDir.exists()) {
+			logDir.mkdir();
+		}
+
+		// Succeeds iff the file doens't already exists
+		try {
+			currentLog.createNewFile();
+			try (PrintWriter logger = new PrintWriter(new FileWriter(currentLog));) {
+				// format taken from https://en.wikipedia.org/wiki/Common_Log_Format
+				String timeStamp = new SimpleDateFormat("[dd/MM/YYYY:HH:mm:ss:SSSS z]").format(new Date());
+				logger.println(timeStamp + " \"" + requestLine + "\" " + Integer.toString(responseCode) + " "
+						+ Integer.toString(sizeOfFileReturned) + crlf);
+
+			}
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
 	private String readFile(File file) {
 		String contents = "";
 
@@ -81,24 +135,25 @@ public class WebServerMain {
 
 		File requestedFile = new File(path);
 		if (!requestedFile.exists()) {
-			out.println(getResponseHeader(404, ""));
-			System.out.println(getResponseHeader(404, ""));
+			respond(line, 404, "", true, verbose);
 			return;
 		}
 		if (!requestedFile.canRead()) {
-			out.println(getResponseHeader(403, ""));
-			System.out.println(getResponseHeader(403, ""));
+			respond(line, 403, "", true, verbose);
 			return;
 		}
 
 		if (method.equals("GET")) {
 			String fileContents = readFile(requestedFile);
-			out.println(getResponseHeader(200, fileContents));
-			out.println(fileContents);
+			respond(line, 200, fileContents, true, verbose);
+
+			// out.println(getResponseHeader(200, fileContents));
+			// out.println(fileContents);
 			return;
 		} else if (method.equals("HEAD")) {
 			String fileContents = readFile(requestedFile);
-			out.println(getResponseHeader(200, fileContents));
+			respond(line, 200, fileContents, false, verbose);
+			// out.println(getResponseHeader(200, fileContents));
 			return;
 		}
 
@@ -119,20 +174,23 @@ public class WebServerMain {
 		String[] splitRequest = request.split(" ");
 
 		if (splitRequest.length != 3) {
-			out.println(getResponseHeader(400, ""));
-			System.out.println(getResponseHeader(400, ""));
+			respond(request, 400, "", true, verbose);
+//			out.println(getResponseHeader(400, ""));
+//			System.out.println(getResponseHeader(400, ""));
 			return false;
 		}
 
 		if (!splitRequest[splitRequest.length - 1].trim().equals(protocol)) {
-			out.println(getResponseHeader(505, ""));
-			System.out.println(getResponseHeader(505, ""));
+			respond(request, 505, "", true, verbose);
+//			out.println(getResponseHeader(505, ""));
+//			System.out.println(getResponseHeader(505, ""));
 			return false;
 		}
 
 		if (!implementedRequests.contains(splitRequest[0])) {
-			out.println(getResponseHeader(501, ""));
-			System.out.println(getResponseHeader(501, ""));
+			respond(request, 501, "", true, verbose);
+//			out.println(getResponseHeader(501, ""));
+//			System.out.println(getResponseHeader(501, ""));
 			return false;
 		}
 
@@ -140,8 +198,9 @@ public class WebServerMain {
 		// https://stackoverflow.com/questions/37370301/how-do-make-a-regular-expression-to-match-file-paths
 		// File.separator is for platform independence
 		if (!Pattern.matches("\\" + File.separator + "?[^\\" + File.separator + "].*", splitRequest[1])) {
-			out.println(getResponseHeader(400, ""));
-			System.out.println(getResponseHeader(400, ""));
+			respond(request, 400, "", true, verbose);
+//			out.println(getResponseHeader(400, ""));
+//			System.out.println(getResponseHeader(400, ""));
 			return false;
 		}
 
