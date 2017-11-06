@@ -18,10 +18,11 @@ import java.util.regex.Pattern;
 import sun.net.www.content.text.plain;
 
 public class WebServerMain {
-	//next line taken from https://stackoverflow.com/questions/2041778/how-to-initialize-hashset-values-by-construction
-	private Set<String> implementedRequests = new HashSet<String>(Arrays.asList("GET","HEAD"));
-	private Map<Integer,String> responseMessage;
-	
+	// next line taken from
+	// https://stackoverflow.com/questions/2041778/how-to-initialize-hashset-values-by-construction
+	private Set<String> implementedRequests = new HashSet<String>(Arrays.asList("GET", "HEAD"));
+	private Map<Integer, String> responseMessage;
+
 	private String root = null;
 	private ServerSocket ss = null;
 	private Socket conn = null;
@@ -29,21 +30,20 @@ public class WebServerMain {
 	private final String crlf = "\r\n";
 	private PrintWriter out = null;
 	private BufferedReader in = null;
-	
+
 	public WebServerMain(int port, String root) throws IOException {
 		super();
 		this.root = root;
 
-		responseMessage = new HashMap<Integer,String>();
-		responseMessage.put(200,"OK");
+		responseMessage = new HashMap<Integer, String>();
+		responseMessage.put(200, "OK");
 		responseMessage.put(400, "Bad Request");
 		responseMessage.put(505, "HTTP Version Not Supported");
 		responseMessage.put(501, "Not Implemented");
 		responseMessage.put(403, "Forbidden ");
 		responseMessage.put(500, "Internal Server Error");
 		responseMessage.put(404, "Not Found");
-		
-		
+
 		ss = new ServerSocket(port);
 		conn = ss.accept();
 
@@ -51,57 +51,57 @@ public class WebServerMain {
 		in = new BufferedReader(isr);
 		out = new PrintWriter(conn.getOutputStream(), true);
 		String line = in.readLine();
-		if(isRequestValid(line)) {
+		if (isRequestValid(line)) {
 			handleRequest(line);
 		}
 		conn.close();
 
 	}
-	
+
 	private String readFile(File file) {
 		String contents = "";
-		
-		try (Scanner s = new Scanner(file);){
-			while(s.hasNextLine()) {
+
+		try (Scanner s = new Scanner(file);) {
+			while (s.hasNextLine()) {
 				contents += s.nextLine() + crlf;
 			}
 		} catch (Exception e) {
-			//we checked the file existed so this should never happen
+			// we checked the file existed so this should never happen
 			e.printStackTrace();
 			System.exit(1);
 		}
 
 		return contents;
 	}
-	
+
 	private void handleRequest(String line) {
 		String[] splitRequest = line.split(" ");
 		String method = splitRequest[0];
 		String path = root + File.separatorChar + splitRequest[1];
-		
+
 		File requestedFile = new File(path);
-		if(!requestedFile.exists()) {
-			out.println( getResponseHeader(404, ""));
-			System.out.println( getResponseHeader(404, ""));
+		if (!requestedFile.exists()) {
+			out.println(getResponseHeader(404, ""));
+			System.out.println(getResponseHeader(404, ""));
 			return;
 		}
-		if(!requestedFile.canRead()) {
+		if (!requestedFile.canRead()) {
 			out.println(getResponseHeader(403, ""));
 			System.out.println(getResponseHeader(403, ""));
 			return;
 		}
-		
-		if(method.equals("GET")) {
-			String fileContents =  readFile(requestedFile);
-			out.println(getResponseHeader(200,fileContents)); 
+
+		if (method.equals("GET")) {
+			String fileContents = readFile(requestedFile);
+			out.println(getResponseHeader(200, fileContents));
 			out.println(fileContents);
 			return;
-		} else if(method.equals("HEAD")) {
-			String fileContents =  readFile(requestedFile);
-			out.println(getResponseHeader(200,fileContents));
+		} else if (method.equals("HEAD")) {
+			String fileContents = readFile(requestedFile);
+			out.println(getResponseHeader(200, fileContents));
 			return;
 		}
-		
+
 	}
 
 	private String getResponseHeader(int responsCode, String responseBody) {
@@ -112,58 +112,57 @@ public class WebServerMain {
 		header += "Content-Type: " + mimeType + crlf;
 		header += "Content-Length: " + responseBody.length() + crlf;
 		return header;
-		
+
 	}
-	
+
 	public boolean isRequestValid(String request) {
 		String[] splitRequest = request.split(" ");
-		
-		if(splitRequest.length != 3) {
+
+		if (splitRequest.length != 3) {
 			out.println(getResponseHeader(400, ""));
 			System.out.println(getResponseHeader(400, ""));
 			return false;
 		}
-		
-		if(!splitRequest[splitRequest.length-1].trim().equals(protocol)) {
+
+		if (!splitRequest[splitRequest.length - 1].trim().equals(protocol)) {
 			out.println(getResponseHeader(505, ""));
 			System.out.println(getResponseHeader(505, ""));
 			return false;
 		}
-		
-		if(! implementedRequests.contains(splitRequest[0])) {
+
+		if (!implementedRequests.contains(splitRequest[0])) {
 			out.println(getResponseHeader(501, ""));
 			System.out.println(getResponseHeader(501, ""));
 			return false;
 		}
-		
-		//regex addapted from https://stackoverflow.com/questions/37370301/how-do-make-a-regular-expression-to-match-file-paths
+
+		// regex addapted from
+		// https://stackoverflow.com/questions/37370301/how-do-make-a-regular-expression-to-match-file-paths
 		// File.separator is for platform independence
-		if(! Pattern.matches("\\" + File.separator + "?[^\\" + File.separator + "].*", splitRequest[1])) {
+		if (!Pattern.matches("\\" + File.separator + "?[^\\" + File.separator + "].*", splitRequest[1])) {
 			out.println(getResponseHeader(400, ""));
 			System.out.println(getResponseHeader(400, ""));
 			return false;
 		}
-		
-		
+
 		return true;
 	}
-
 
 	public static void main(String[] args) {
 
 		try {
 			File inRoot = new File(args[0]);
 			int inPort = Integer.parseInt(args[1]);
-			assert inRoot.exists() : "inRoot.exists(): " +  inRoot.exists();
-			assert inRoot.isDirectory(): "inRoot.isDirectory(): " + inRoot.isDirectory();
+			assert inRoot.exists() : "inRoot.exists(): " + inRoot.exists();
+			assert inRoot.isDirectory() : "inRoot.isDirectory(): " + inRoot.isDirectory();
 			assert inRoot.canWrite() : "inRoot.canWrite(): " + inRoot.canWrite();
-			 assert inRoot.canRead() : "inRoot.canRead(): " + inRoot.canRead();
+			assert inRoot.canRead() : "inRoot.canRead(): " + inRoot.canRead();
 			assert inPort > 0;
 
 			new WebServerMain(inPort, args[0]);
 
 		} catch (Exception e) {
-			//e.printStackTrace();
+			// e.printStackTrace();
 			System.out.println("Usage: java WebServerMain <document_root> <port>");
 		}
 
