@@ -55,17 +55,20 @@ public class WebServerMain {
 		responseMessage.put(404, "Not Found");
 
 		ss = new ServerSocket(port);
-		conn = ss.accept();
+		while(true) {
+			conn = ss.accept();
 
-		InputStreamReader isr = new InputStreamReader(conn.getInputStream());
-		in = new BufferedReader(isr);
-		out = new PrintWriter(conn.getOutputStream(), true);
-		String line = in.readLine();
-		if (isRequestValid(line)) {
-			handleRequest(line);
+			InputStreamReader isr = new InputStreamReader(conn.getInputStream());
+			in = new BufferedReader(isr);
+			out = new PrintWriter(conn.getOutputStream(), true);
+			String line = in.readLine();
+			if (isRequestValid(line)) {
+				handleRequest(line);
+			}
+			conn.close();
+
 		}
-		conn.close();
-
+		
 	}
 
 	private void respond(String requestLine, int responseCode, String messageBody, boolean serveBody, boolean verbose) {
@@ -97,10 +100,10 @@ public class WebServerMain {
 		// Succeeds iff the file doens't already exists
 		try {
 			currentLog.createNewFile();
-			try (PrintWriter logger = new PrintWriter(new FileWriter(currentLog));) {
+			try (PrintWriter logger = new PrintWriter(new FileWriter(currentLog,true));) {
 				// format taken from https://en.wikipedia.org/wiki/Common_Log_Format
 				String timeStamp = new SimpleDateFormat("[dd/MM/YYYY:HH:mm:ss:SSSS z]").format(new Date());
-				logger.println(timeStamp + " \"" + requestLine + "\" " + Integer.toString(responseCode) + " "
+				logger.print(timeStamp + " \"" + requestLine + "\" " + Integer.toString(responseCode) + " "
 						+ Integer.toString(sizeOfFileReturned) + crlf);
 
 			}
