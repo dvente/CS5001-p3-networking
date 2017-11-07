@@ -36,6 +36,14 @@ public class WebServerMain {
 	private BufferedReader in = null;
 	private final boolean verbose = true;
 
+	private final int HTTP_200_OK = 200;
+	private final int HTTP_400_BAD_REQUEST =  400;
+	private final int HTTP_505_HTTP_NOT_SUPPORTED = 505;
+	private final int HTTP_501_NOT_IMPLEMENTED = 501;
+	private final int HTTP_403_FORBIDDEN = 403;
+	private final int HTTP_500_INTERNAL_ERROR = 500;
+	private final int HTTP_404_NOT_FOUND = 404;
+	
 	/**
 	 * @param port
 	 * @param root
@@ -46,13 +54,13 @@ public class WebServerMain {
 		this.root = root;
 
 		responseMessage = new HashMap<Integer, String>();
-		responseMessage.put(200, "OK");
-		responseMessage.put(400, "Bad Request");
-		responseMessage.put(505, "HTTP Version Not Supported");
-		responseMessage.put(501, "Not Implemented");
-		responseMessage.put(403, "Forbidden ");
-		responseMessage.put(500, "Internal Server Error");
-		responseMessage.put(404, "Not Found");
+		responseMessage.put(HTTP_200_OK, "OK");
+		responseMessage.put( HTTP_400_BAD_REQUEST, "Bad Request");
+		responseMessage.put(HTTP_505_HTTP_NOT_SUPPORTED, "HTTP Version Not Supported");
+		responseMessage.put(HTTP_501_NOT_IMPLEMENTED, "Not Implemented");
+		responseMessage.put(HTTP_403_FORBIDDEN, "Forbidden ");
+		responseMessage.put(HTTP_500_INTERNAL_ERROR, "Internal Server Error");
+		responseMessage.put(HTTP_404_NOT_FOUND, "Not Found");
 
 		ss = new ServerSocket(port);
 		while(true) {
@@ -138,25 +146,25 @@ public class WebServerMain {
 
 		File requestedFile = new File(path);
 		if (!requestedFile.exists()) {
-			respond(line, 404, "", true, verbose);
+			respond(line, HTTP_404_NOT_FOUND, "", true, verbose);
 			return;
 		}
 		if (!requestedFile.canRead()) {
-			respond(line, 403, "", true, verbose);
+			respond(line, HTTP_403_FORBIDDEN, "", true, verbose);
 			return;
 		}
 
 		if (method.equals("GET")) {
 			String fileContents = readFile(requestedFile);
-			respond(line, 200, fileContents, true, verbose);
+			respond(line, HTTP_200_OK, fileContents, true, verbose);
 
-			// out.println(getResponseHeader(200, fileContents));
+			// out.println(getResponseHeader(HTTP_200_OK, fileContents));
 			// out.println(fileContents);
 			return;
 		} else if (method.equals("HEAD")) {
 			String fileContents = readFile(requestedFile);
-			respond(line, 200, fileContents, false, verbose);
-			// out.println(getResponseHeader(200, fileContents));
+			respond(line, HTTP_200_OK, fileContents, false, verbose);
+			// out.println(getResponseHeader(HTTP_200_OK, fileContents));
 			return;
 		}
 
@@ -177,23 +185,23 @@ public class WebServerMain {
 		String[] splitRequest = request.split(" ");
 
 		if (splitRequest.length != 3) {
-			respond(request, 400, "", true, verbose);
-//			out.println(getResponseHeader(400, ""));
-//			System.out.println(getResponseHeader(400, ""));
+			respond(request,  HTTP_400_BAD_REQUEST, "", true, verbose);
+//			out.println(getResponseHeader( HTTP_400_BAD_REQUEST, ""));
+//			System.out.println(getResponseHeader( HTTP_400_BAD_REQUEST, ""));
 			return false;
 		}
 
 		if (!splitRequest[splitRequest.length - 1].trim().equals(protocol)) {
-			respond(request, 505, "", true, verbose);
-//			out.println(getResponseHeader(505, ""));
-//			System.out.println(getResponseHeader(505, ""));
+			respond(request, HTTP_505_HTTP_NOT_SUPPORTED, "", true, verbose);
+//			out.println(getResponseHeader(HTTP_505_HTTP_NOT_SUPPORTED, ""));
+//			System.out.println(getResponseHeader(HTTP_505_HTTP_NOT_SUPPORTED, ""));
 			return false;
 		}
 
 		if (!implementedRequests.contains(splitRequest[0])) {
-			respond(request, 501, "", true, verbose);
-//			out.println(getResponseHeader(501, ""));
-//			System.out.println(getResponseHeader(501, ""));
+			respond(request, HTTP_501_NOT_IMPLEMENTED, "", true, verbose);
+//			out.println(getResponseHeader(HTTP_501_NOT_IMPLEMENTED, ""));
+//			System.out.println(getResponseHeader(HTTP_501_NOT_IMPLEMENTED, ""));
 			return false;
 		}
 
@@ -201,9 +209,9 @@ public class WebServerMain {
 		// https://stackoverflow.com/questions/37370301/how-do-make-a-regular-expression-to-match-file-paths
 		// File.separator is for platform independence
 		if (!Pattern.matches("\\" + File.separator + "?[^\\" + File.separator + "].*", splitRequest[1])) {
-			respond(request, 400, "", true, verbose);
-//			out.println(getResponseHeader(400, ""));
-//			System.out.println(getResponseHeader(400, ""));
+			respond(request,  HTTP_400_BAD_REQUEST, "", true, verbose);
+//			out.println(getResponseHeader( HTTP_400_BAD_REQUEST, ""));
+//			System.out.println(getResponseHeader( HTTP_400_BAD_REQUEST, ""));
 			return false;
 		}
 
