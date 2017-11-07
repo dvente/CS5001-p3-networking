@@ -16,6 +16,11 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+/**
+ * A simple HTTP webserver.
+ *
+ * @author 170008773
+ */
 public class WebServerMain {
 
     // next line taken from
@@ -32,19 +37,25 @@ public class WebServerMain {
     private BufferedReader in = null;
     private final String logPath = "logs";
     private final boolean verbose = true;
+    private static final int HTTP_REQUEST_COMPONENTS = 3;
 
-    private final int HTTP_200_OK = 200;
-    private final int HTTP_400_BAD_REQUEST = 400;
-    private final int HTTP_505_HTTP_NOT_SUPPORTED = 505;
-    private final int HTTP_501_NOT_IMPLEMENTED = 501;
-    private final int HTTP_403_FORBIDDEN = 403;
-    private final int HTTP_500_INTERNAL_ERROR = 500;
-    private final int HTTP_404_NOT_FOUND = 404;
+    private static final int HTTP_200_OK = 200;
+    private static final int HTTP_400_BAD_REQUEST = 400;
+    private static final int HTTP_505_HTTP_NOT_SUPPORTED = 505;
+    private static final int HTTP_501_NOT_IMPLEMENTED = 501;
+    private static final int HTTP_403_FORBIDDEN = 403;
+    private static final int HTTP_500_INTERNAL_ERROR = 500;
+    private static final int HTTP_404_NOT_FOUND = 404;
 
     /**
+     * Constructor.
+     *
      * @param port
+     *            the port the server should listen on
      * @param root
+     *            the folder where all the documents are stored
      * @throws IOException
+     *             do you want text here check?
      */
 
     public WebServerMain(int port, String root) throws IOException {
@@ -77,6 +88,18 @@ public class WebServerMain {
 
     }
 
+    /**
+     * Sends back an appropriately formated response to the client.
+     *
+     * @param requestLine
+     *            The request that was made, used for logging.
+     * @param responseCode
+     *            the HTTP response code
+     * @param messageBody
+     *            the content of the requested file
+     * @param serveBody
+     *            should the body be sent to the client?
+     */
     private void respond(String requestLine, int responseCode, String messageBody, boolean serveBody) {
 
         logRequest(requestLine, responseCode, messageBody.length());
@@ -94,6 +117,16 @@ public class WebServerMain {
         out.flush();
     }
 
+    /**
+     * Stores the incoming requests in a daily file.
+     *
+     * @param requestLine
+     *            the request that was made
+     * @param responseCode
+     *            the HTTP response code
+     * @param sizeOfFileReturned
+     *            The number of bytes to be sent with the response
+     */
     private void logRequest(String requestLine, int responseCode, int sizeOfFileReturned) {
 
         // next line was taken from
@@ -123,6 +156,13 @@ public class WebServerMain {
 
     }
 
+    /**
+     * Read contents of text file into a string.
+     *
+     * @param file
+     *            the file to be read
+     * @return a string containing the contents of the provided file
+     */
     private String readFile(File file) {
 
         String contents = "";
@@ -140,6 +180,12 @@ public class WebServerMain {
         return contents;
     }
 
+    /**
+     * parses the request and calls appropriate functions to respond.
+     *
+     * @param line
+     *            the request that was received.
+     */
     private void handleRequest(String line) {
 
         String[] splitRequest = line.split(" ");
@@ -173,6 +219,15 @@ public class WebServerMain {
 
     }
 
+    /**
+     * constructs a appropriately formated HTTP response header.
+     *
+     * @param responsCode
+     *            the HTTP response code
+     * @param responseBody
+     *            the contents of the message to be returned.
+     * @return
+     */
     private String getResponseHeader(int responsCode, String responseBody) {
 
         assert responseMessage.containsKey(responsCode) : "invalid response code" + Integer.toString(responsCode);
@@ -185,11 +240,18 @@ public class WebServerMain {
 
     }
 
+    /**
+     * Checks whether a request is valid.
+     *
+     * @param request
+     *            the request to be validated
+     * @return True if the request is valid, false otherwise
+     */
     public boolean isRequestValid(String request) {
 
         String[] splitRequest = request.split(" ");
 
-        if (splitRequest.length != 3) {
+        if (splitRequest.length != HTTP_REQUEST_COMPONENTS) {
             respond(request, HTTP_400_BAD_REQUEST, "", true);
             // out.println(getResponseHeader( HTTP_400_BAD_REQUEST, ""));
             // System.out.println(getResponseHeader( HTTP_400_BAD_REQUEST, ""));
@@ -225,6 +287,12 @@ public class WebServerMain {
         return true;
     }
 
+    /**
+     * main function. does some input checking and then starts up the server.
+     *
+     * @param args
+     *            the command line arguments
+     */
     public static void main(String[] args) {
 
         try {
