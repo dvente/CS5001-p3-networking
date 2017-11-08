@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -25,7 +26,7 @@ public class WebServerMain {
 
     // next line taken from
     // https://stackoverflow.com/questions/2041778/how-to-initialize-hashset-values-by-construction
-    private Set<String> implementedRequests = new HashSet<String>(Arrays.asList("GET", "HEAD"));
+    private Set<String> implementedRequests = new HashSet<String>(Arrays.asList("GET", "HEAD", "DELETE"));
     private Map<Integer, String> responseMessage;
 
     private String root = null;
@@ -35,7 +36,7 @@ public class WebServerMain {
     private final String crlf = "\r\n";
     private PrintWriter out = null;
     private BufferedReader in = null;
-    private final String logPath = "logs";
+    private final String logPath;
     private final boolean verbose = true;
     private static final int HTTP_REQUEST_COMPONENTS = 3;
 
@@ -61,6 +62,7 @@ public class WebServerMain {
     public WebServerMain(int port, String root) throws IOException {
         super();
         this.root = root;
+        logPath = root + File.separator + "logs";
 
         responseMessage = new HashMap<Integer, String>();
         responseMessage.put(HTTP_200_OK, "OK");
@@ -130,7 +132,10 @@ public class WebServerMain {
     private void logRequest(String requestLine, int responseCode, int sizeOfFileReturned) {
 
         // next line was taken from
-        // https://stackoverflow.com/questions/23068676/how-to-get-current-timestamp-in-string-format-in-java-yyyy-mm-dd-hh-mm-ss
+        // https://stackoverflow.com/questions/23068676/how-to-get-current-timesta
+        // out.println(getResponseHeader( HTTP_400_BAD_REQUEST, ""));
+        // System.out.println(getResponseHeader( HTTP_400_BAD_REQUEST,
+        // ""));mp-in-string-format-in-java-yyyy-mm-dd-hh-mm-ss
         String today = new SimpleDateFormat("YYYYMMdd").format(new Date());
         File currentLog = new File(logPath + File.separator + today + ".log");
         File logDir = new File(logPath);
@@ -206,14 +211,19 @@ public class WebServerMain {
         if (method.equals("GET")) {
             String fileContents = readFile(requestedFile);
             respond(line, HTTP_200_OK, fileContents, true);
-
-            // out.println(getResponseHeader(HTTP_200_OK, fileContents));
-            // out.println(fileContents);
             return;
         } else if (method.equals("HEAD")) {
             String fileContents = readFile(requestedFile);
             respond(line, HTTP_200_OK, fileContents, false);
-            // out.println(getResponseHeader(HTTP_200_OK, fileContents));
+            return;
+        } else if (method.equals("DELETE")) {
+            try {
+                Files.delete(new File(path).toPath());
+                respond(line, HTTP_200_OK, "", false);
+            } catch (IOException x) {
+                respond(line, HTTP_500_INTERNAL_ERROR, "", false);
+                System.err.println(x);
+            }
             return;
         }
 
@@ -253,24 +263,16 @@ public class WebServerMain {
 
         if (splitRequest.length != HTTP_REQUEST_COMPONENTS) {
             respond(request, HTTP_400_BAD_REQUEST, "", true);
-            // out.println(getResponseHeader( HTTP_400_BAD_REQUEST, ""));
-            // System.out.println(getResponseHeader( HTTP_400_BAD_REQUEST, ""));
             return false;
         }
 
         if (!splitRequest[splitRequest.length - 1].trim().equals(protocol)) {
             respond(request, HTTP_505_HTTP_NOT_SUPPORTED, "", true);
-            // out.println(getResponseHeader(HTTP_505_HTTP_NOT_SUPPORTED, ""));
-            // System.out.println(getResponseHeader(HTTP_505_HTTP_NOT_SUPPORTED,
-            // ""));
             return false;
         }
 
         if (!implementedRequests.contains(splitRequest[0])) {
             respond(request, HTTP_501_NOT_IMPLEMENTED, "", true);
-            // out.println(getResponseHeader(HTTP_501_NOT_IMPLEMENTED, ""));
-            // System.out.println(getResponseHeader(HTTP_501_NOT_IMPLEMENTED,
-            // ""));
             return false;
         }
 
@@ -279,8 +281,6 @@ public class WebServerMain {
         // File.separator is for platform independence
         if (!Pattern.matches("\\" + File.separator + "?[^\\" + File.separator + "].*", splitRequest[1])) {
             respond(request, HTTP_400_BAD_REQUEST, "", true);
-            // out.println(getResponseHeader( HTTP_400_BAD_REQUEST, ""));
-            // System.out.println(getResponseHeader( HTTP_400_BAD_REQUEST, ""));
             return false;
         }
 
