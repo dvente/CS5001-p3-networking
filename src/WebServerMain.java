@@ -60,9 +60,10 @@ public class WebServerMain {
      */
 
     public WebServerMain(int port, String root) throws IOException {
+
         super();
         this.root = root;
-        logPath = root + File.separator + "logs";
+        logPath = root + File.separator + ".." + File.separator + "logs";
 
         responseMessage = new HashMap<Integer, String>();
         responseMessage.put(HTTP_200_OK, "OK");
@@ -142,6 +143,8 @@ public class WebServerMain {
         if (!logDir.exists()) {
             logDir.mkdir();
         }
+        assert logDir.exists();
+        assert logDir.canWrite();
 
         // Succeeds iff the file doens't already exists
         try {
@@ -203,7 +206,8 @@ public class WebServerMain {
             respond(line, HTTP_404_NOT_FOUND, "", true);
             return;
         }
-        if (!requestedFile.canRead()) {
+
+        if (!isRequestAllowed(method, requestedFile)) {
             respond(line, HTTP_403_FORBIDDEN, "", true);
             return;
         }
@@ -287,6 +291,18 @@ public class WebServerMain {
         return true;
     }
 
+    public boolean isRequestAllowed(String method, File requestedFile) {
+
+        if (!requestedFile.canRead()) {
+            return false;
+        }
+        if ((method.equals("DELETE") || method.equals("PUT")) && !requestedFile.canWrite()) {
+            return false;
+        }
+
+        return true;
+    }
+
     /**
      * main function. does some input checking and then starts up the server.
      *
@@ -298,7 +314,7 @@ public class WebServerMain {
         try {
             File inRoot = new File(args[0]);
             int inPort = Integer.parseInt(args[1]);
-            assert inRoot.exists() : "inRoot.exists(): " + inRoot.exists();
+            assert inRoot.exists() : "inRoot.exists(): " + inRoot;
             assert inRoot.isDirectory() : "inRoot.isDirectory(): " + inRoot.isDirectory();
             assert inRoot.canWrite() : "inRoot.canWrite(): " + inRoot.canWrite();
             assert inRoot.canRead() : "inRoot.canRead(): " + inRoot.canRead();
